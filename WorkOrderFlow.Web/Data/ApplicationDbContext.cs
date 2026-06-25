@@ -14,4 +14,6 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Quote> Quotes => Set<Quote>();
 
+    public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
+
 }
