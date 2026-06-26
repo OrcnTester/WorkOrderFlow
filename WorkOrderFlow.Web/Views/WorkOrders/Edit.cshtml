@@ -1,77 +1,84 @@
 @model WorkOrderFlow.Web.Models.WorkOrder
+@using WorkOrderFlow.Web.Models
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Edit Work Order";
 }
 
-<h1>Edit</h1>
+<h1>Edit Work Order</h1>
 
-<h4>WorkOrder</h4>
 <hr />
+
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-8">
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
             <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="CustomerId" class="control-label"></label>
+            <input type="hidden" asp-for="CreatedAt" />
+
+            <div class="mb-3">
+                <label asp-for="CustomerId" class="form-label">Customer</label>
                 <select asp-for="CustomerId" class="form-control" asp-items="ViewBag.CustomerId"></select>
                 <span asp-validation-for="CustomerId" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="QuoteId" class="control-label"></label>
-                <select asp-for="QuoteId" class="form-control" asp-items="ViewBag.QuoteId"></select>
+
+            <div class="mb-3">
+                <label asp-for="QuoteId" class="form-label">Quote</label>
+                <select asp-for="QuoteId" class="form-control" asp-items="ViewBag.QuoteId">
+                    <option value="">No quote</option>
+                </select>
                 <span asp-validation-for="QuoteId" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="Title" class="control-label"></label>
+
+            <div class="mb-3">
+                <label asp-for="Title" class="form-label"></label>
                 <input asp-for="Title" class="form-control" />
                 <span asp-validation-for="Title" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
-			<div class="form-group">
-				<label asp-for="Status" class="control-label"></label>
-				<select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<WorkOrderStatus>()"></select>
-				<span asp-validation-for="Status" class="text-danger"></span>
-			</div>
-			<div class="form-group">
-				<label asp-for="Priority" class="control-label"></label>
-				<select asp-for="Priority" class="form-control" asp-items="Html.GetEnumSelectList<WorkOrderPriority>()"></select>
-				<span asp-validation-for="Priority" class="text-danger"></span>
-			</div>
-            <div class="form-group">
-                <label asp-for="CreatedAt" class="control-label"></label>
-                <input asp-for="CreatedAt" class="form-control" />
-                <span asp-validation-for="CreatedAt" class="text-danger"></span>
+
+            <div class="mb-3">
+                <label asp-for="Status" class="form-label"></label>
+                <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<WorkOrderStatus>()"></select>
+                <span asp-validation-for="Status" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="DueDate" class="control-label"></label>
+
+            <div class="mb-3">
+                <label asp-for="Priority" class="form-label"></label>
+                <select asp-for="Priority" class="form-control" asp-items="Html.GetEnumSelectList<WorkOrderPriority>()"></select>
+                <span asp-validation-for="Priority" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="DueDate" class="form-label"></label>
                 <input asp-for="DueDate" class="form-control" />
                 <span asp-validation-for="DueDate" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="CompletedAt" class="control-label"></label>
+
+            <div class="mb-3">
+                <label asp-for="CompletedAt" class="form-label"></label>
                 <input asp-for="CompletedAt" class="form-control" />
                 <span asp-validation-for="CompletedAt" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="ResolutionNote" class="control-label"></label>
-                <input asp-for="ResolutionNote" class="form-control" />
+
+            <div class="mb-3">
+                <label asp-for="ResolutionNote" class="form-label"></label>
+                <textarea asp-for="ResolutionNote" class="form-control" rows="3"></textarea>
                 <span asp-validation-for="ResolutionNote" class="text-danger"></span>
             </div>
-            <div class="form-group">
+
+            <div class="mb-3">
                 <input type="submit" value="Save" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
             </div>
         </form>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {
