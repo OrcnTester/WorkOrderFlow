@@ -16,4 +16,6 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
 
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+
 }
