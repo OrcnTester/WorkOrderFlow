@@ -1,82 +1,75 @@
 @model IEnumerable<WorkOrderFlow.Web.Models.WorkOrder>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Work Orders";
 }
 
-<h1>Index</h1>
+<h1>Work Orders</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-primary">Create New Work Order</a>
 </p>
-<table class="table">
+
+<table class="table table-sm table-striped align-middle">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Customer)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Quote)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Title)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Description)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Status)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Priority)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.DueDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CompletedAt)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ResolutionNote)
-            </th>
+            <th>Customer</th>
+            <th>Quote</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Due Date</th>
+            <th>Created</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
+@foreach (var item in Model)
+{
         <tr>
             <td>
-                @Html.DisplayFor(modelItem => item.Customer.Id)
+                @(item.Customer?.FullName ?? $"Customer #{item.CustomerId}")
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Quote.Id)
+                @(item.Quote?.Title ?? "-")
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Title)
+                @item.Title
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Description)
+                @{
+                    var statusClass = item.Status switch
+                    {
+                        WorkOrderFlow.Web.Models.WorkOrderStatus.New => "badge bg-secondary",
+                        WorkOrderFlow.Web.Models.WorkOrderStatus.Approved => "badge bg-info text-dark",
+                        WorkOrderFlow.Web.Models.WorkOrderStatus.InProgress => "badge bg-primary",
+                        WorkOrderFlow.Web.Models.WorkOrderStatus.WaitingParts => "badge bg-warning text-dark",
+                        WorkOrderFlow.Web.Models.WorkOrderStatus.Completed => "badge bg-success",
+                        WorkOrderFlow.Web.Models.WorkOrderStatus.Delivered => "badge bg-dark",
+                        WorkOrderFlow.Web.Models.WorkOrderStatus.Cancelled => "badge bg-danger",
+                        _ => "badge bg-secondary"
+                    };
+                }
+                <span class="@statusClass">@item.Status</span>
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Status)
+                @{
+                    var priorityClass = item.Priority switch
+                    {
+                        WorkOrderFlow.Web.Models.WorkOrderPriority.Low => "badge bg-secondary",
+                        WorkOrderFlow.Web.Models.WorkOrderPriority.Medium => "badge bg-info text-dark",
+                        WorkOrderFlow.Web.Models.WorkOrderPriority.High => "badge bg-warning text-dark",
+                        WorkOrderFlow.Web.Models.WorkOrderPriority.Urgent => "badge bg-danger",
+                        _ => "badge bg-secondary"
+                    };
+                }
+                <span class="@priorityClass">@item.Priority</span>
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Priority)
+                @item.DueDate?.ToString("dd.MM.yyyy")
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.CreatedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.DueDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CompletedAt)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ResolutionNote)
+                @item.CreatedAt.ToString("dd.MM.yyyy")
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
