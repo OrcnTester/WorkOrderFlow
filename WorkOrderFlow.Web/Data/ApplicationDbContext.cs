@@ -18,4 +18,6 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
 
+    public DbSet<WorkOrderMaterial> WorkOrderMaterials => Set<WorkOrderMaterial>();
+
 }
