@@ -1,109 +1,167 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WorkOrderFlow.Web.Data;
 using WorkOrderFlow.Web.Models;
 
-namespace WorkOrderFlow.Web.Controllers
+namespace WorkOrderFlow.Web.Controllers;
+
+public class WorkOrderMaterialsController : Controller
 {
-    public class WorkOrderMaterialsController : Controller
+    private readonly ApplicationDbContext _context;
+
+    public WorkOrderMaterialsController(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
+        _context = context;
+    }
 
-        public WorkOrderMaterialsController(ApplicationDbContext context)
+    public async Task<IActionResult> Index()
+    {
+        var materials = _context.WorkOrderMaterials
+            .Include(w => w.WorkOrder)
+            .Include(w => w.InventoryItem)
+            .OrderByDescending(w => w.UsedAt);
+
+        return View(await materials.ToListAsync());
+    }
+
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null)
         {
-            _context = context;
+            return NotFound();
         }
 
-        // GET: WorkOrderMaterials
-        public async Task<IActionResult> Index()
+        var material = await _context.WorkOrderMaterials
+            .Include(w => w.WorkOrder)
+            .Include(w => w.InventoryItem)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (material == null)
         {
-            var applicationDbContext = _context.WorkOrderMaterials.Include(w => w.InventoryItem).Include(w => w.WorkOrder);
-            return View(await applicationDbContext.ToListAsync());
+            return NotFound();
         }
 
-        // GET: WorkOrderMaterials/Details/5
-        public async Task<IActionResult> Details(int? id)
+        return View(material);
+    }
+
+    public IActionResult Create()
+    {
+        ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Title");
+        ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Name");
+
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind("WorkOrderId,InventoryItemId,QuantityUsed,UnitPrice,UsedAt,Notes")] WorkOrderMaterial workOrderMaterial)
+    {
+        var inventoryItem = await _context.InventoryItems.FindAsync(workOrderMaterial.InventoryItemId);
+
+        if (inventoryItem == null)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var workOrderMaterial = await _context.WorkOrderMaterials
-                .Include(w => w.InventoryItem)
-                .Include(w => w.WorkOrder)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (workOrderMaterial == null)
-            {
-                return NotFound();
-            }
-
-            return View(workOrderMaterial);
+            ModelState.AddModelError("InventoryItemId", "Inventory item not found.");
+        }
+        else if (workOrderMaterial.QuantityUsed <= 0)
+        {
+            ModelState.AddModelError("QuantityUsed", "Quantity used must be greater than zero.");
+        }
+        else if (inventoryItem.QuantityOnHand < workOrderMaterial.QuantityUsed)
+        {
+            ModelState.AddModelError("QuantityUsed", $"Not enough stock. Available: {inventoryItem.QuantityOnHand}");
         }
 
-        // GET: WorkOrderMaterials/Create
-        public IActionResult Create()
+        if (ModelState.IsValid)
         {
-            ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Id");
-            ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Id");
-            return View();
+            if (workOrderMaterial.UnitPrice <= 0 && inventoryItem != null)
+            {
+                workOrderMaterial.UnitPrice = inventoryItem.SalePrice;
+            }
+
+            workOrderMaterial.UsedAt = workOrderMaterial.UsedAt == default
+                ? DateTime.UtcNow
+                : workOrderMaterial.UsedAt;
+
+            inventoryItem!.QuantityOnHand -= workOrderMaterial.QuantityUsed;
+
+            _context.Add(workOrderMaterial);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // POST: WorkOrderMaterials/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,WorkOrderId,InventoryItemId,QuantityUsed,UnitPrice,UsedAt,Notes")] WorkOrderMaterial workOrderMaterial)
+        ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Title", workOrderMaterial.WorkOrderId);
+        ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Name", workOrderMaterial.InventoryItemId);
+
+        return View(workOrderMaterial);
+    }
+
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(workOrderMaterial);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Id", workOrderMaterial.InventoryItemId);
-            ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Id", workOrderMaterial.WorkOrderId);
-            return View(workOrderMaterial);
+            return NotFound();
         }
 
-        // GET: WorkOrderMaterials/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+        var material = await _context.WorkOrderMaterials.FindAsync(id);
 
-            var workOrderMaterial = await _context.WorkOrderMaterials.FindAsync(id);
-            if (workOrderMaterial == null)
-            {
-                return NotFound();
-            }
-            ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Id", workOrderMaterial.InventoryItemId);
-            ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Id", workOrderMaterial.WorkOrderId);
-            return View(workOrderMaterial);
+        if (material == null)
+        {
+            return NotFound();
         }
 
-        // POST: WorkOrderMaterials/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,WorkOrderId,InventoryItemId,QuantityUsed,UnitPrice,UsedAt,Notes")] WorkOrderMaterial workOrderMaterial)
+        ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Title", material.WorkOrderId);
+        ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Name", material.InventoryItemId);
+
+        return View(material);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, [Bind("Id,WorkOrderId,InventoryItemId,QuantityUsed,UnitPrice,UsedAt,Notes")] WorkOrderMaterial workOrderMaterial)
+    {
+        if (id != workOrderMaterial.Id)
         {
-            if (id != workOrderMaterial.Id)
+            return NotFound();
+        }
+
+        var existingMaterial = await _context.WorkOrderMaterials
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (existingMaterial == null)
+        {
+            return NotFound();
+        }
+
+        var oldInventoryItem = await _context.InventoryItems.FindAsync(existingMaterial.InventoryItemId);
+        var newInventoryItem = await _context.InventoryItems.FindAsync(workOrderMaterial.InventoryItemId);
+
+        if (newInventoryItem == null)
+        {
+            ModelState.AddModelError("InventoryItemId", "Inventory item not found.");
+        }
+        else if (workOrderMaterial.QuantityUsed <= 0)
+        {
+            ModelState.AddModelError("QuantityUsed", "Quantity used must be greater than zero.");
+        }
+
+        if (ModelState.IsValid)
+        {
+            if (oldInventoryItem != null)
             {
-                return NotFound();
+                oldInventoryItem.QuantityOnHand += existingMaterial.QuantityUsed;
             }
 
-            if (ModelState.IsValid)
+            if (newInventoryItem!.QuantityOnHand < workOrderMaterial.QuantityUsed)
             {
+                ModelState.AddModelError("QuantityUsed", $"Not enough stock. Available: {newInventoryItem.QuantityOnHand}");
+            }
+            else
+            {
+                newInventoryItem.QuantityOnHand -= workOrderMaterial.QuantityUsed;
+
                 try
                 {
                     _context.Update(workOrderMaterial);
@@ -115,56 +173,64 @@ namespace WorkOrderFlow.Web.Controllers
                     {
                         return NotFound();
                     }
-                    else
-                    {
-                        throw;
-                    }
+
+                    throw;
                 }
+
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Id", workOrderMaterial.InventoryItemId);
-            ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Id", workOrderMaterial.WorkOrderId);
-            return View(workOrderMaterial);
         }
 
-        // GET: WorkOrderMaterials/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Title", workOrderMaterial.WorkOrderId);
+        ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Name", workOrderMaterial.InventoryItemId);
+
+        return View(workOrderMaterial);
+    }
+
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var workOrderMaterial = await _context.WorkOrderMaterials
-                .Include(w => w.InventoryItem)
-                .Include(w => w.WorkOrder)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (workOrderMaterial == null)
-            {
-                return NotFound();
-            }
-
-            return View(workOrderMaterial);
+            return NotFound();
         }
 
-        // POST: WorkOrderMaterials/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        var material = await _context.WorkOrderMaterials
+            .Include(w => w.WorkOrder)
+            .Include(w => w.InventoryItem)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (material == null)
         {
-            var workOrderMaterial = await _context.WorkOrderMaterials.FindAsync(id);
-            if (workOrderMaterial != null)
+            return NotFound();
+        }
+
+        return View(material);
+    }
+
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var material = await _context.WorkOrderMaterials.FindAsync(id);
+
+        if (material != null)
+        {
+            var inventoryItem = await _context.InventoryItems.FindAsync(material.InventoryItemId);
+
+            if (inventoryItem != null)
             {
-                _context.WorkOrderMaterials.Remove(workOrderMaterial);
+                inventoryItem.QuantityOnHand += material.QuantityUsed;
             }
 
+            _context.WorkOrderMaterials.Remove(material);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
         }
 
-        private bool WorkOrderMaterialExists(int id)
-        {
-            return _context.WorkOrderMaterials.Any(e => e.Id == id);
-        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    private bool WorkOrderMaterialExists(int id)
+    {
+        return _context.WorkOrderMaterials.Any(e => e.Id == id);
     }
 }
