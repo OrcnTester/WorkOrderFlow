@@ -1,0 +1,139 @@
+@model WorkOrderFlow.Web.ViewModels.DashboardViewModel
+@using WorkOrderFlow.Web.Models
+
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Customers</div>
+                <h2>@Model.TotalCustomers</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Quotes</div>
+                <h2>@Model.TotalQuotes</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Pending Quotes</div>
+                <h2>@Model.PendingQuotes</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Accepted Quotes</div>
+                <h2>@Model.AcceptedQuotes</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Open Work Orders</div>
+                <h2>@Model.OpenWorkOrders</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-muted">Completed</div>
+                <h2>@Model.CompletedWorkOrders</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-warning">
+            <div class="card-body">
+                <div class="text-muted">Late Work Orders</div>
+                <h2>@Model.LateWorkOrders</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-success">
+            <div class="card-body">
+                <div class="text-muted">Estimated Revenue</div>
+                <h2>@Model.EstimatedRevenue.ToString("N2") ₺</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3 class="mb-3">Recent Work Orders</h3>
+
+<table class="table table-sm table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Customer</th>
+            <th>Quote</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Due Date</th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model.RecentWorkOrders)
+{
+        <tr>
+            <td>@(item.Customer?.FullName ?? $"Customer #{item.CustomerId}")</td>
+            <td>@(item.Quote?.Title ?? "-")</td>
+            <td>@item.Title</td>
+            <td>
+                @{
+                    var statusClass = item.Status switch
+                    {
+                        WorkOrderStatus.New => "badge bg-secondary",
+                        WorkOrderStatus.Approved => "badge bg-info text-dark",
+                        WorkOrderStatus.InProgress => "badge bg-primary",
+                        WorkOrderStatus.WaitingParts => "badge bg-warning text-dark",
+                        WorkOrderStatus.Completed => "badge bg-success",
+                        WorkOrderStatus.Delivered => "badge bg-dark",
+                        WorkOrderStatus.Cancelled => "badge bg-danger",
+                        _ => "badge bg-secondary"
+                    };
+                }
+                <span class="@statusClass">@item.Status</span>
+            </td>
+            <td>
+                @{
+                    var priorityClass = item.Priority switch
+                    {
+                        WorkOrderPriority.Low => "badge bg-secondary",
+                        WorkOrderPriority.Medium => "badge bg-info text-dark",
+                        WorkOrderPriority.High => "badge bg-warning text-dark",
+                        WorkOrderPriority.Urgent => "badge bg-danger",
+                        _ => "badge bg-secondary"
+                    };
+                }
+                <span class="@priorityClass">@item.Priority</span>
+            </td>
+            <td>@item.DueDate?.ToString("dd.MM.yyyy")</td>
+        </tr>
+}
+    </tbody>
+</table>
