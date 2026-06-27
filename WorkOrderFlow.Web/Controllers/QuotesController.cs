@@ -23,11 +23,32 @@ namespace WorkOrderFlow.Web.Controllers
         }
 
         // GET: Quotes
-        public async Task<IActionResult> Index()
-        {
-            var applicationDbContext = _context.Quotes.Include(q => q.Customer);
-            return View(await applicationDbContext.ToListAsync());
-        }
+      public async Task<IActionResult> Index(string? search, QuoteStatus? status)
+      {
+            var quotes = _context.Quotes
+                .Include(q => q.Customer)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                quotes = quotes.Where(q =>
+                    q.Title.Contains(search) ||
+                    (q.Notes != null && q.Notes.Contains(search)) ||
+                    (q.Customer != null && q.Customer.FullName.Contains(search)));
+            }
+
+            if (status.HasValue)
+            {
+                quotes = quotes.Where(q => q.Status == status.Value);
+            }
+
+            ViewData["CurrentSearch"] = search;
+            ViewData["CurrentStatus"] = status.HasValue ? ((int)status.Value).ToString() : "";
+
+            return View(await quotes
+                .OrderByDescending(q => q.CreatedAt)
+                .ToListAsync());
+      }
 
         // GET: Quotes/Details/5
         public async Task<IActionResult> Details(int? id)

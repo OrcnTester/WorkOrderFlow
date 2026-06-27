@@ -1,71 +1,122 @@
 @model IEnumerable<WorkOrderFlow.Web.Models.Quote>
+@using WorkOrderFlow.Web.Models
 
 @{
     ViewData["Title"] = "Quotes";
+
+    var currentSearch = ViewData["CurrentSearch"] as string;
+    var currentStatus = ViewData["CurrentStatus"] as string;
 }
 
-<h1>Quotes</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-0">Quotes</h1>
+        <div class="text-muted">Manage customer offers, totals, status and PDF exports.</div>
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
+    <a asp-action="Create" class="btn btn-primary">Create New Quote</a>
+</div>
 
-<table class="table table-sm table-striped">
-    <thead>
-        <tr>
-            <th>Customer</th>
-            <th>Title</th>
-            <th>Labor</th>
-            <th>Parts</th>
-            <th>Discount</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Valid Until</th>
-            <th>Notes</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Search</label>
+                <input type="text"
+                       name="search"
+                       value="@currentSearch"
+                       class="form-control"
+                       placeholder="Search customer, title or notes..." />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All statuses</option>
+                    @foreach (var item in Html.GetEnumSelectList<QuoteStatus>())
+                    {
+                        if (item.Value == currentStatus)
+                        {
+                            <option value="@item.Value" selected>@item.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-dark">Filter</button>
+            </div>
+
+            <div class="col-md-12">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Clear filters</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No quotes found for the selected filters.
+    </div>
+}
+else
+{
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th>Title</th>
+                <th>Labor</th>
+                <th>Parts</th>
+                <th>Discount</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Valid Until</th>
+                <th>Notes</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
 @foreach (var item in Model)
 {
     var total = item.LaborCost + item.PartsCost - item.Discount;
 
-        <tr>
-            <td>
-                @(item.Customer?.FullName ?? $"Customer #{item.CustomerId}")
-            </td>
-            <td>
-                @item.Title
-            </td>
-            <td>
-                @item.LaborCost.ToString("N2")
-            </td>
-            <td>
-                @item.PartsCost.ToString("N2")
-            </td>
-            <td>
-                @item.Discount.ToString("N2")
-            </td>
-            <td>
-                <strong>@total.ToString("N2")</strong>
-            </td>
-            <td>
-                @item.Status
-            </td>
-            <td>
-                @item.ValidUntil?.ToString("dd.MM.yyyy HH:mm")
-            </td>
-            <td>
-                @item.Notes
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="DownloadPdf" asp-route-id="@item.Id">PDF</a> |
-                <a asp-action="CreateWorkOrderFromQuote" asp-route-id="@item.Id">Create/Open Work Order</a>|
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+            <tr>
+                <td>@(item.Customer?.FullName ?? $"Customer #{item.CustomerId}")</td>
+                <td>@item.Title</td>
+                <td>@item.LaborCost.ToString("N2")</td>
+                <td>@item.PartsCost.ToString("N2")</td>
+                <td>@item.Discount.ToString("N2")</td>
+                <td><strong>@total.ToString("N2") ₺</strong></td>
+                <td>
+                    @{
+                        var statusClass = item.Status switch
+                        {
+                            QuoteStatus.Draft => "badge bg-secondary",
+                            QuoteStatus.Sent => "badge bg-primary",
+                            QuoteStatus.Accepted => "badge bg-success",
+                            QuoteStatus.Rejected => "badge bg-danger",
+                            _ => "badge bg-secondary"
+                        };
+                    }
+                    <span class="@statusClass">@item.Status</span>
+                </td>
+                <td>@item.ValidUntil?.ToString("dd.MM.yyyy HH:mm")</td>
+                <td>@item.Notes</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="DownloadPdf" asp-route-id="@item.Id">PDF</a> |
+                    <a asp-action="CreateWorkOrderFromQuote" asp-route-id="@item.Id">Create/Open Work Order</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                </td>
+            </tr>
 }
-    </tbody>
-</table>
+        </tbody>
+    </table>
+}
