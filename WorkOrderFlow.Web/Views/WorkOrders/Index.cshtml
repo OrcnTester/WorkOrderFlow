@@ -1,83 +1,159 @@
 @model IEnumerable<WorkOrderFlow.Web.Models.WorkOrder>
+@using WorkOrderFlow.Web.Models
 
 @{
     ViewData["Title"] = "Work Orders";
+
+    var currentSearch = ViewData["CurrentSearch"] as string;
+    var currentStatus = ViewData["CurrentStatus"] as string;
+    var currentPriority = ViewData["CurrentPriority"] as string;
 }
 
-<h1>Work Orders</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-0">Work Orders</h1>
+        <div class="text-muted">Track operational jobs, priorities and status.</div>
+    </div>
 
-<p>
     <a asp-action="Create" class="btn btn-primary">Create New Work Order</a>
-</p>
+</div>
 
-<table class="table table-sm table-striped align-middle">
-    <thead>
-        <tr>
-            <th>Customer</th>
-            <th>Quote</th>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th>Due Date</th>
-            <th>Created</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label">Search</label>
+                <input type="text"
+                       name="search"
+                       value="@currentSearch"
+                       class="form-control"
+                       placeholder="Search customer, title or description..." />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All statuses</option>
+                    @foreach (var item in Html.GetEnumSelectList<WorkOrderStatus>())
+                    {
+                        if (item.Value == currentStatus)
+                        {
+                            <option value="@item.Value" selected>@item.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="">All priorities</option>
+                    @foreach (var item in Html.GetEnumSelectList<WorkOrderPriority>())
+                    {
+                        if (item.Value == currentPriority)
+                        {
+                            <option value="@item.Value" selected>@item.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-1 d-grid">
+                <button type="submit" class="btn btn-dark">Filter</button>
+            </div>
+
+            <div class="col-md-12">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Clear filters</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No work orders found for the selected filters.
+    </div>
+}
+else
+{
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th>Quote</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Due Date</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
 @foreach (var item in Model)
 {
-        <tr>
-            <td>
-                @(item.Customer?.FullName ?? $"Customer #{item.CustomerId}")
-            </td>
-            <td>
-                @(item.Quote?.Title ?? "-")
-            </td>
-            <td>
-                @item.Title
-            </td>
-            <td>
-                @{
-                    var statusClass = item.Status switch
-                    {
-                        WorkOrderFlow.Web.Models.WorkOrderStatus.New => "badge bg-secondary",
-                        WorkOrderFlow.Web.Models.WorkOrderStatus.Approved => "badge bg-info text-dark",
-                        WorkOrderFlow.Web.Models.WorkOrderStatus.InProgress => "badge bg-primary",
-                        WorkOrderFlow.Web.Models.WorkOrderStatus.WaitingParts => "badge bg-warning text-dark",
-                        WorkOrderFlow.Web.Models.WorkOrderStatus.Completed => "badge bg-success",
-                        WorkOrderFlow.Web.Models.WorkOrderStatus.Delivered => "badge bg-dark",
-                        WorkOrderFlow.Web.Models.WorkOrderStatus.Cancelled => "badge bg-danger",
-                        _ => "badge bg-secondary"
-                    };
-                }
-                <span class="@statusClass">@item.Status</span>
-            </td>
-            <td>
-                @{
-                    var priorityClass = item.Priority switch
-                    {
-                        WorkOrderFlow.Web.Models.WorkOrderPriority.Low => "badge bg-secondary",
-                        WorkOrderFlow.Web.Models.WorkOrderPriority.Medium => "badge bg-info text-dark",
-                        WorkOrderFlow.Web.Models.WorkOrderPriority.High => "badge bg-warning text-dark",
-                        WorkOrderFlow.Web.Models.WorkOrderPriority.Urgent => "badge bg-danger",
-                        _ => "badge bg-secondary"
-                    };
-                }
-                <span class="@priorityClass">@item.Priority</span>
-            </td>
-            <td>
-                @item.DueDate?.ToString("dd.MM.yyyy")
-            </td>
-            <td>
-                @item.CreatedAt.ToString("dd.MM.yyyy")
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="DownloadPdf" asp-route-id="@item.Id">PDF</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+            <tr>
+                <td>
+                    @(item.Customer?.FullName ?? $"Customer #{item.CustomerId}")
+                </td>
+                <td>
+                    @(item.Quote?.Title ?? "-")
+                </td>
+                <td>
+                    @item.Title
+                </td>
+                <td>
+                    @{
+                        var statusClass = item.Status switch
+                        {
+                            WorkOrderStatus.New => "badge bg-secondary",
+                            WorkOrderStatus.Approved => "badge bg-info text-dark",
+                            WorkOrderStatus.InProgress => "badge bg-primary",
+                            WorkOrderStatus.WaitingParts => "badge bg-warning text-dark",
+                            WorkOrderStatus.Completed => "badge bg-success",
+                            WorkOrderStatus.Delivered => "badge bg-dark",
+                            WorkOrderStatus.Cancelled => "badge bg-danger",
+                            _ => "badge bg-secondary"
+                        };
+                    }
+                    <span class="@statusClass">@item.Status</span>
+                </td>
+                <td>
+                    @{
+                        var priorityClass = item.Priority switch
+                        {
+                            WorkOrderPriority.Low => "badge bg-secondary",
+                            WorkOrderPriority.Medium => "badge bg-info text-dark",
+                            WorkOrderPriority.High => "badge bg-warning text-dark",
+                            WorkOrderPriority.Urgent => "badge bg-danger",
+                            _ => "badge bg-secondary"
+                        };
+                    }
+                    <span class="@priorityClass">@item.Priority</span>
+                </td>
+                <td>
+                    @item.DueDate?.ToString("dd.MM.yyyy")
+                </td>
+                <td>
+                    @item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="DownloadPdf" asp-route-id="@item.Id">PDF</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                </td>
+            </tr>
 }
-    </tbody>
-</table>
+        </tbody>
+    </table>
+}

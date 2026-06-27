@@ -17,14 +17,38 @@ public class WorkOrdersController : Controller
         _workOrderPdfService = workOrderPdfService;
     }
 
-    public async Task<IActionResult> Index()
-    {
+   public async Task<IActionResult> Index(string? search, WorkOrderStatus? status, WorkOrderPriority? priority)
+   {
         var workOrders = _context.WorkOrders
             .Include(w => w.Customer)
             .Include(w => w.Quote)
-            .OrderByDescending(w => w.CreatedAt);
+            .AsQueryable();
 
-        return View(await workOrders.ToListAsync());
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            workOrders = workOrders.Where(w =>
+                w.Title.Contains(search) ||
+                (w.Description != null && w.Description.Contains(search)) ||
+                (w.Customer != null && w.Customer.FullName.Contains(search)));
+        }
+
+        if (status.HasValue)
+        {
+            workOrders = workOrders.Where(w => w.Status == status.Value);
+        }
+
+        if (priority.HasValue)
+        {
+            workOrders = workOrders.Where(w => w.Priority == priority.Value);
+        }
+
+        ViewData["CurrentSearch"] = search;
+        ViewData["CurrentStatus"] = status.HasValue ? ((int)status.Value).ToString() : "";
+        ViewData["CurrentPriority"] = priority.HasValue ? ((int)priority.Value).ToString() : "";
+
+        return View(await workOrders
+            .OrderByDescending(w => w.CreatedAt)
+            .ToListAsync());
     }
 
     public async Task<IActionResult> Details(int? id)
