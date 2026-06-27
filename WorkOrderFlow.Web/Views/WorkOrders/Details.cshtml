@@ -83,6 +83,7 @@ else
 
 <div class="mt-3">
     <a asp-controller="WorkOrderMaterials" asp-action="Create" class="btn btn-primary">Add Material</a>
+    <a asp-action="DownloadPdf" asp-route-id="@Model.Id" class="btn btn-success">PDF</a>
     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-secondary">Edit Work Order</a>
     <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
 </div>

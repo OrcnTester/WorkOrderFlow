@@ -3,16 +3,18 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WorkOrderFlow.Web.Data;
 using WorkOrderFlow.Web.Models;
-
+using WorkOrderFlow.Web.Services;
 namespace WorkOrderFlow.Web.Controllers;
 
 public class WorkOrdersController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly WorkOrderPdfService _workOrderPdfService;
 
-    public WorkOrdersController(ApplicationDbContext context)
+   public WorkOrdersController(ApplicationDbContext context, WorkOrderPdfService workOrderPdfService)
     {
         _context = context;
+        _workOrderPdfService = workOrderPdfService;
     }
 
     public async Task<IActionResult> Index()
@@ -171,6 +173,31 @@ public class WorkOrdersController : Controller
         await _context.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> DownloadPdf(int id)
+    {
+        var workOrder = await _context.WorkOrders
+            .Include(w => w.Customer)
+            .Include(w => w.Quote)
+            .FirstOrDefaultAsync(w => w.Id == id);
+
+        if (workOrder == null)
+        {
+            return NotFound();
+        }
+
+        var materials = await _context.WorkOrderMaterials
+            .Include(m => m.InventoryItem)
+            .Where(m => m.WorkOrderId == id)
+            .OrderByDescending(m => m.UsedAt)
+            .ToListAsync();
+
+        var pdfBytes = _workOrderPdfService.Generate(workOrder, materials);
+
+        Response.Headers.ContentDisposition = $"inline; filename=\"work-order-{workOrder.Id}.pdf\"";
+
+        return File(pdfBytes, "application/pdf");
     }
 
     private bool WorkOrderExists(int id)

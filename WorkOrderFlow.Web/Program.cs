@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
 using WorkOrderFlow.Web.Data;
 using WorkOrderFlow.Web.Services;
@@ -13,6 +13,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<QuotePdfService>();
+builder.Services.AddScoped<WorkOrderPdfService>();
 
 var app = builder.Build();
 
