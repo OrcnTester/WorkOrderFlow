@@ -3,66 +3,76 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - WorkOrderFlow.Web</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - WorkOrderFlow</title>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WorkOrderFlow.Web.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">WorkOrderFlow.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+        <nav class="navbar navbar-expand-lg navbar-dark app-navbar border-bottom shadow-sm">
+            <div class="container-fluid app-container">
+                <a class="navbar-brand fw-bold" asp-controller="Dashboard" asp-action="Index">
+                    WorkOrderFlow
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" asp-controller="Customers" asp-action="Index">Customers</a>
                         </li>
-			            <li class="nav-item">
-			               <a class="nav-link text-dark" asp-area="" asp-controller="Customers" asp-action="Index">Customers</a>
-			            </li>
+
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Quotes" asp-action="Index">Quotes</a>
+                            <a class="nav-link" asp-controller="Quotes" asp-action="Index">Quotes</a>
                         </li>
-						<li class="nav-item">
-							<a class="nav-link text-dark" asp-area="" asp-controller="WorkOrders" asp-action="Index">Work Orders</a>
-						</li>
+
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                            <a class="nav-link" asp-controller="WorkOrders" asp-action="Index">Work Orders</a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="InventoryItems" asp-action="Index">Inventory</a>
+                            <a class="nav-link" asp-controller="InventoryItems" asp-action="Index">Inventory</a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="WorkOrderMaterials" asp-action="Index">Materials</a>
+                            <a class="nav-link" asp-controller="WorkOrderMaterials" asp-action="Index">Materials</a>
                         </li>
                     </ul>
+
+                    <span class="navbar-text small">
+                        Operations Management
+                    </span>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - WorkOrderFlow.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <main class="app-main">
+        <div class="container-fluid app-container py-4">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="app-footer border-top">
+        <div class="container-fluid app-container py-3 small text-muted">
+            © 2026 - WorkOrderFlow · ASP.NET Core MVC operations platform
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

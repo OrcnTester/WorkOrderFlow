@@ -29,3 +29,99 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+/* WorkOrderFlow app polish */
+
+:root {
+    --wof-bg: #f5f7fb;
+    --wof-surface: #ffffff;
+    --wof-border: #e5e7eb;
+    --wof-text: #111827;
+    --wof-muted: #6b7280;
+    --wof-primary: #1d4ed8;
+}
+
+html {
+    font-size: 14px;
+}
+
+body {
+    background: var(--wof-bg);
+    color: var(--wof-text);
+}
+
+.app-navbar {
+    background: #111827;
+}
+
+.app-container {
+    max-width: 1180px;
+}
+
+.app-main {
+    min-height: calc(100vh - 112px);
+}
+
+.app-footer {
+    background: #ffffff;
+}
+
+h1 {
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+h2, h3 {
+    font-weight: 700;
+}
+
+.card {
+    border: 1px solid var(--wof-border);
+    border-radius: 12px;
+}
+
+.card.shadow-sm {
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04) !important;
+}
+
+.table {
+    background: var(--wof-surface);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid var(--wof-border);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn {
+    border-radius: 8px;
+}
+
+.badge {
+    border-radius: 999px;
+    padding: 0.4em 0.65em;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.page-actions {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
