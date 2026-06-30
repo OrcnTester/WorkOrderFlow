@@ -47,9 +47,7 @@ public class WorkOrderMaterialsController : Controller
 
     public IActionResult Create()
     {
-        ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Title");
-        ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Name");
-
+        PopulateSelectLists();
         return View();
     }
 
@@ -85,15 +83,24 @@ public class WorkOrderMaterialsController : Controller
 
             inventoryItem!.QuantityOnHand -= workOrderMaterial.QuantityUsed;
 
-            _context.Add(workOrderMaterial);
+            _context.WorkOrderMaterials.Add(workOrderMaterial);
+
+            _context.InventoryTransactions.Add(new InventoryTransaction
+            {
+                InventoryItemId = inventoryItem.Id,
+                WorkOrderId = workOrderMaterial.WorkOrderId,
+                Type = InventoryTransactionType.WorkOrderUsage,
+                QuantityChange = -workOrderMaterial.QuantityUsed,
+                QuantityAfter = inventoryItem.QuantityOnHand,
+                Notes = $"Material used on work order #{workOrderMaterial.WorkOrderId}"
+            });
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
-        ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Title", workOrderMaterial.WorkOrderId);
-        ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Name", workOrderMaterial.InventoryItemId);
-
+        PopulateSelectLists(workOrderMaterial);
         return View(workOrderMaterial);
     }
 
@@ -111,9 +118,7 @@ public class WorkOrderMaterialsController : Controller
             return NotFound();
         }
 
-        ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Title", material.WorkOrderId);
-        ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Name", material.InventoryItemId);
-
+        PopulateSelectLists(material);
         return View(material);
     }
 
@@ -160,7 +165,39 @@ public class WorkOrderMaterialsController : Controller
             }
             else
             {
+                if (workOrderMaterial.UnitPrice <= 0)
+                {
+                    workOrderMaterial.UnitPrice = newInventoryItem.SalePrice;
+                }
+
+                workOrderMaterial.UsedAt = workOrderMaterial.UsedAt == default
+                    ? DateTime.UtcNow
+                    : workOrderMaterial.UsedAt;
+
                 newInventoryItem.QuantityOnHand -= workOrderMaterial.QuantityUsed;
+
+                if (oldInventoryItem != null)
+                {
+                    _context.InventoryTransactions.Add(new InventoryTransaction
+                    {
+                        InventoryItemId = oldInventoryItem.Id,
+                        WorkOrderId = existingMaterial.WorkOrderId,
+                        Type = InventoryTransactionType.WorkOrderUsageReversal,
+                        QuantityChange = existingMaterial.QuantityUsed,
+                        QuantityAfter = oldInventoryItem.QuantityOnHand,
+                        Notes = $"Material usage edit reversal for work order #{existingMaterial.WorkOrderId}"
+                    });
+                }
+
+                _context.InventoryTransactions.Add(new InventoryTransaction
+                {
+                    InventoryItemId = newInventoryItem.Id,
+                    WorkOrderId = workOrderMaterial.WorkOrderId,
+                    Type = InventoryTransactionType.WorkOrderUsageCorrection,
+                    QuantityChange = -workOrderMaterial.QuantityUsed,
+                    QuantityAfter = newInventoryItem.QuantityOnHand,
+                    Notes = $"Material usage edited for work order #{workOrderMaterial.WorkOrderId}"
+                });
 
                 try
                 {
@@ -181,9 +218,7 @@ public class WorkOrderMaterialsController : Controller
             }
         }
 
-        ViewData["WorkOrderId"] = new SelectList(_context.WorkOrders, "Id", "Title", workOrderMaterial.WorkOrderId);
-        ViewData["InventoryItemId"] = new SelectList(_context.InventoryItems, "Id", "Name", workOrderMaterial.InventoryItemId);
-
+        PopulateSelectLists(workOrderMaterial);
         return View(workOrderMaterial);
     }
 
@@ -220,6 +255,16 @@ public class WorkOrderMaterialsController : Controller
             if (inventoryItem != null)
             {
                 inventoryItem.QuantityOnHand += material.QuantityUsed;
+
+                _context.InventoryTransactions.Add(new InventoryTransaction
+                {
+                    InventoryItemId = inventoryItem.Id,
+                    WorkOrderId = material.WorkOrderId,
+                    Type = InventoryTransactionType.WorkOrderUsageReversal,
+                    QuantityChange = material.QuantityUsed,
+                    QuantityAfter = inventoryItem.QuantityOnHand,
+                    Notes = $"Material usage deleted from work order #{material.WorkOrderId}"
+                });
             }
 
             _context.WorkOrderMaterials.Remove(material);
@@ -227,6 +272,21 @@ public class WorkOrderMaterialsController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    private void PopulateSelectLists(WorkOrderMaterial? material = null)
+    {
+        ViewData["WorkOrderId"] = new SelectList(
+            _context.WorkOrders.OrderBy(w => w.Title),
+            "Id",
+            "Title",
+            material?.WorkOrderId);
+
+        ViewData["InventoryItemId"] = new SelectList(
+            _context.InventoryItems.OrderBy(i => i.Name),
+            "Id",
+            "Name",
+            material?.InventoryItemId);
     }
 
     private bool WorkOrderMaterialExists(int id)
