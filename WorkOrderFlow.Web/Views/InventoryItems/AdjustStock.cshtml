@@ -1,0 +1,65 @@
+@model WorkOrderFlow.Web.ViewModels.StockAdjustmentViewModel
+
+@{
+    ViewData["Title"] = "Adjust Stock";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-0">Adjust Stock</h1>
+        <div class="text-muted">Increase or decrease inventory quantity and create a stock movement record.</div>
+    </div>
+
+    <a asp-action="Index" class="btn btn-outline-secondary">Back to Inventory</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form asp-action="AdjustStock" method="post">
+            <input asp-for="InventoryItemId" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Item</label>
+                    <input asp-for="ItemName" class="form-control" readonly />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">SKU</label>
+                    <input asp-for="Sku" class="form-control" readonly />
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Current Quantity</label>
+                    <input asp-for="CurrentQuantity" class="form-control" readonly />
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="QuantityChange" class="form-label">Quantity Change</label>
+                    <input asp-for="QuantityChange" class="form-control" type="number" />
+                    <span asp-validation-for="QuantityChange" class="text-danger"></span>
+                    <div class="form-text">
+                        Use positive numbers to add stock, negative numbers to reduce stock.
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="Notes" class="form-label">Notes</label>
+                    <input asp-for="Notes" class="form-control" placeholder="Example: New delivery, stock count correction, damaged item..." />
+                    <span asp-validation-for="Notes" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary">Save Adjustment</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
