@@ -10,11 +10,16 @@ public class WorkOrdersController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly WorkOrderPdfService _workOrderPdfService;
+    private readonly WorkOrderWorkflowService _workflowService;
 
-   public WorkOrdersController(ApplicationDbContext context, WorkOrderPdfService workOrderPdfService)
+   public WorkOrdersController(
+                                ApplicationDbContext context,
+                                WorkOrderPdfService workOrderPdfService,
+                                WorkOrderWorkflowService workflowService)
     {
         _context = context;
         _workOrderPdfService = workOrderPdfService;
+        _workflowService = workflowService;
     }
 
    public async Task<IActionResult> Index(string? search, WorkOrderStatus? status, WorkOrderPriority? priority)
@@ -229,44 +234,39 @@ public class WorkOrdersController : Controller
 
         return File(pdfBytes, "application/pdf");
     }
+
 [HttpPost]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> StartWork(int id)
 {
-    var workOrder = await _context.WorkOrders.FindAsync(id);
+    var success = await _workflowService.ChangeStatusAsync(
+        id,
+        WorkOrderStatus.InProgress,
+        "Work started or resumed",
+        clearCompletedAt: true);
 
-    if (workOrder == null)
+    if (!success)
     {
         return NotFound();
     }
 
-    var note = workOrder.Status == WorkOrderStatus.WaitingParts
-        ? "Work resumed after waiting for parts"
-        : "Work started";
-
-    AddStatusHistory(workOrder, WorkOrderStatus.InProgress, note);
-
-    workOrder.CompletedAt = null;
-
-    await _context.SaveChangesAsync();
-
-    return RedirectToAction(nameof(Details), new { id = workOrder.Id });
+    return RedirectToAction(nameof(Details), new { id });
 }
+
 [HttpPost]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> MarkWaitingParts(int id)
 {
-    var workOrder = await _context.WorkOrders.FindAsync(id);
+    var success = await _workflowService.ChangeStatusAsync(
+        id,
+        WorkOrderStatus.WaitingParts,
+        "Waiting for parts",
+        clearCompletedAt: true);
 
-    if (workOrder == null)
+    if (!success)
     {
         return NotFound();
     }
-
-    AddStatusHistory(workOrder, WorkOrderStatus.WaitingParts, "Waiting for parts");
-    workOrder.CompletedAt = null;
-
-    await _context.SaveChangesAsync();
 
     return RedirectToAction(nameof(Details), new { id });
 }
@@ -275,17 +275,16 @@ public async Task<IActionResult> MarkWaitingParts(int id)
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> CompleteWork(int id)
 {
-    var workOrder = await _context.WorkOrders.FindAsync(id);
+    var success = await _workflowService.ChangeStatusAsync(
+        id,
+        WorkOrderStatus.Completed,
+        "Work completed",
+        setCompletedAt: true);
 
-    if (workOrder == null)
+    if (!success)
     {
         return NotFound();
     }
-
-    AddStatusHistory(workOrder, WorkOrderStatus.Completed, "Work completed");
-    workOrder.CompletedAt = DateTime.UtcNow;
-
-    await _context.SaveChangesAsync();
 
     return RedirectToAction(nameof(Details), new { id });
 }
@@ -294,21 +293,16 @@ public async Task<IActionResult> CompleteWork(int id)
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> MarkDelivered(int id)
 {
-    var workOrder = await _context.WorkOrders.FindAsync(id);
+    var success = await _workflowService.ChangeStatusAsync(
+        id,
+        WorkOrderStatus.Delivered,
+        "Work order delivered",
+        setCompletedAtIfMissing: true);
 
-    if (workOrder == null)
+    if (!success)
     {
         return NotFound();
     }
-
-    AddStatusHistory(workOrder, WorkOrderStatus.Delivered, "Work order delivered");
-
-    if (workOrder.CompletedAt == null)
-    {
-        workOrder.CompletedAt = DateTime.UtcNow;
-    }
-
-    await _context.SaveChangesAsync();
 
     return RedirectToAction(nameof(Details), new { id });
 }
@@ -317,58 +311,38 @@ public async Task<IActionResult> MarkDelivered(int id)
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> ReopenWork(int id)
 {
-    var workOrder = await _context.WorkOrders.FindAsync(id);
+    var success = await _workflowService.ChangeStatusAsync(
+        id,
+        WorkOrderStatus.InProgress,
+        "Work order reopened",
+        clearCompletedAt: true);
 
-    if (workOrder == null)
+    if (!success)
     {
         return NotFound();
     }
 
-    AddStatusHistory(workOrder, WorkOrderStatus.InProgress, "Work order reopened");
-    workOrder.CompletedAt = null;
+    return RedirectToAction(nameof(Details), new { id });
+}
 
-    await _context.SaveChangesAsync();
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> CancelWork(int id)
+{
+    var success = await _workflowService.ChangeStatusAsync(
+        id,
+        WorkOrderStatus.Cancelled,
+        "Work order cancelled",
+        clearCompletedAt: true);
+
+    if (!success)
+    {
+        return NotFound();
+    }
 
     return RedirectToAction(nameof(Details), new { id });
 }
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CancelWork(int id)
-    {
-        var workOrder = await _context.WorkOrders.FindAsync(id);
 
-        if (workOrder == null)
-        {
-            return NotFound();
-        }
-
-        AddStatusHistory(workOrder, WorkOrderStatus.Cancelled, "Work order cancelled");
-        workOrder.CompletedAt = null;
-
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction(nameof(Details), new { id });
-    }
-    private void AddStatusHistory(WorkOrder workOrder, WorkOrderStatus toStatus, string notes)
-    {
-        var fromStatus = workOrder.Status;
-
-        if (fromStatus == toStatus)
-        {
-            return;
-        }
-
-        _context.WorkOrderStatusHistories.Add(new WorkOrderStatusHistory
-        {
-            WorkOrderId = workOrder.Id,
-            FromStatus = fromStatus,
-            ToStatus = toStatus,
-            Notes = notes,
-            CreatedAt = DateTime.UtcNow
-        });
-
-        workOrder.Status = toStatus;
-    }
     private bool WorkOrderExists(int id)
     {
         return _context.WorkOrders.Any(e => e.Id == id);

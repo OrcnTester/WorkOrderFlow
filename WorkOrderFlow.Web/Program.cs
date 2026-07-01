@@ -14,6 +14,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<QuotePdfService>();
 builder.Services.AddScoped<WorkOrderPdfService>();
+builder.Services.AddScoped<WorkOrderWorkflowService>();
 
 var app = builder.Build();
 
