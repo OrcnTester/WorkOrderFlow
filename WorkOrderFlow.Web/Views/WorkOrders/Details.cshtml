@@ -6,6 +6,7 @@
 
     var materials = ViewData["Materials"] as List<WorkOrderMaterial> ?? new List<WorkOrderMaterial>();
     var materialTotal = ViewData["MaterialTotal"] as decimal? ?? 0m;
+    var statusHistory = ViewData["StatusHistory"] as List<WorkOrderStatusHistory> ?? new();
 }
 
 <h1>Work Order Details</h1>
@@ -42,7 +43,44 @@
         }
     </div>
 </div>
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Status Timeline</h5>
 
+        @if (!statusHistory.Any())
+        {
+            <div class="alert alert-info mb-0">
+                No status changes recorded yet.
+            </div>
+        }
+        else
+        {
+            <table class="table table-sm table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+@foreach (var item in statusHistory)
+{
+                    <tr>
+                        <td>@item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@(item.FromStatus?.ToString() ?? "-")</td>
+                        <td>
+                            <span class="badge bg-primary">@item.ToStatus</span>
+                        </td>
+                        <td>@item.Notes</td>
+                    </tr>
+}
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
 <h3>Materials Used</h3>
 
 @if (!materials.Any())
@@ -93,7 +131,7 @@ else
         <div class="d-flex flex-wrap gap-2">
             @if (Model.Status == WorkOrderStatus.New || Model.Status == WorkOrderStatus.Approved || Model.Status == WorkOrderStatus.WaitingParts)
             {
-                <form asp-action="StartWork" asp-route-id="@Model.Id" method="post">
+                <form asp-controller="WorkOrders" asp-action="StartWork" asp-route-id="@Model.Id" method="post">
                     <button type="submit" class="btn btn-primary btn-sm">Start Work</button>
                 </form>
             }

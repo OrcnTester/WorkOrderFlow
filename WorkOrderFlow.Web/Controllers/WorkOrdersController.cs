@@ -52,33 +52,39 @@ public class WorkOrdersController : Controller
     }
 
     public async Task<IActionResult> Details(int? id)
+{
+    if (id == null)
     {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var workOrder = await _context.WorkOrders
-            .Include(w => w.Customer)
-            .Include(w => w.Quote)
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (workOrder == null)
-        {
-            return NotFound();
-        }
-
-        var materials = await _context.WorkOrderMaterials
-            .Include(m => m.InventoryItem)
-            .Where(m => m.WorkOrderId == workOrder.Id)
-            .OrderByDescending(m => m.UsedAt)
-            .ToListAsync();
-
-        ViewData["Materials"] = materials;
-        ViewData["MaterialTotal"] = materials.Sum(m => m.QuantityUsed * m.UnitPrice);
-
-        return View(workOrder);
+        return NotFound();
     }
+
+    var workOrder = await _context.WorkOrders
+        .Include(w => w.Customer)
+        .Include(w => w.Quote)
+        .FirstOrDefaultAsync(m => m.Id == id);
+
+    if (workOrder == null)
+    {
+        return NotFound();
+    }
+
+    var materials = await _context.WorkOrderMaterials
+        .Include(m => m.InventoryItem)
+        .Where(m => m.WorkOrderId == workOrder.Id)
+        .OrderByDescending(m => m.UsedAt)
+        .ToListAsync();
+
+    var statusHistory = await _context.WorkOrderStatusHistories
+        .Where(h => h.WorkOrderId == workOrder.Id)
+        .OrderByDescending(h => h.CreatedAt)
+        .ToListAsync();
+
+    ViewData["Materials"] = materials;
+    ViewData["MaterialTotal"] = materials.Sum(m => m.QuantityUsed * m.UnitPrice);
+    ViewData["StatusHistory"] = statusHistory;
+
+    return View(workOrder);
+}
 
     public IActionResult Create()
     {
@@ -223,7 +229,6 @@ public class WorkOrdersController : Controller
 
         return File(pdfBytes, "application/pdf");
     }
-
 [HttpPost]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> StartWork(int id)
@@ -235,14 +240,18 @@ public async Task<IActionResult> StartWork(int id)
         return NotFound();
     }
 
-    workOrder.Status = WorkOrderStatus.InProgress;
+    var note = workOrder.Status == WorkOrderStatus.WaitingParts
+        ? "Work resumed after waiting for parts"
+        : "Work started";
+
+    AddStatusHistory(workOrder, WorkOrderStatus.InProgress, note);
+
     workOrder.CompletedAt = null;
 
     await _context.SaveChangesAsync();
 
-    return RedirectToAction(nameof(Details), new { id });
+    return RedirectToAction(nameof(Details), new { id = workOrder.Id });
 }
-
 [HttpPost]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> MarkWaitingParts(int id)
@@ -254,7 +263,7 @@ public async Task<IActionResult> MarkWaitingParts(int id)
         return NotFound();
     }
 
-    workOrder.Status = WorkOrderStatus.WaitingParts;
+    AddStatusHistory(workOrder, WorkOrderStatus.WaitingParts, "Waiting for parts");
     workOrder.CompletedAt = null;
 
     await _context.SaveChangesAsync();
@@ -273,7 +282,7 @@ public async Task<IActionResult> CompleteWork(int id)
         return NotFound();
     }
 
-    workOrder.Status = WorkOrderStatus.Completed;
+    AddStatusHistory(workOrder, WorkOrderStatus.Completed, "Work completed");
     workOrder.CompletedAt = DateTime.UtcNow;
 
     await _context.SaveChangesAsync();
@@ -292,7 +301,7 @@ public async Task<IActionResult> MarkDelivered(int id)
         return NotFound();
     }
 
-    workOrder.Status = WorkOrderStatus.Delivered;
+    AddStatusHistory(workOrder, WorkOrderStatus.Delivered, "Work order delivered");
 
     if (workOrder.CompletedAt == null)
     {
@@ -315,7 +324,7 @@ public async Task<IActionResult> ReopenWork(int id)
         return NotFound();
     }
 
-    workOrder.Status = WorkOrderStatus.InProgress;
+    AddStatusHistory(workOrder, WorkOrderStatus.InProgress, "Work order reopened");
     workOrder.CompletedAt = null;
 
     await _context.SaveChangesAsync();
@@ -333,12 +342,32 @@ public async Task<IActionResult> ReopenWork(int id)
             return NotFound();
         }
 
-        workOrder.Status = WorkOrderStatus.Cancelled;
+        AddStatusHistory(workOrder, WorkOrderStatus.Cancelled, "Work order cancelled");
         workOrder.CompletedAt = null;
 
         await _context.SaveChangesAsync();
 
         return RedirectToAction(nameof(Details), new { id });
+    }
+    private void AddStatusHistory(WorkOrder workOrder, WorkOrderStatus toStatus, string notes)
+    {
+        var fromStatus = workOrder.Status;
+
+        if (fromStatus == toStatus)
+        {
+            return;
+        }
+
+        _context.WorkOrderStatusHistories.Add(new WorkOrderStatusHistory
+        {
+            WorkOrderId = workOrder.Id,
+            FromStatus = fromStatus,
+            ToStatus = toStatus,
+            Notes = notes,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        workOrder.Status = toStatus;
     }
     private bool WorkOrderExists(int id)
     {

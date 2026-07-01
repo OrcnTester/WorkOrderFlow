@@ -22,4 +22,6 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
 
+    public DbSet<WorkOrderStatusHistory> WorkOrderStatusHistories => Set<WorkOrderStatusHistory>();
+
 }
