@@ -139,6 +139,32 @@
             </div>
         </div>
     </div>
+    <div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-primary">
+            <div class="card-body">
+                <div class="text-muted">Stock Movements</div>
+                <h2>@Model.TotalStockMovements</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-success">
+            <div class="card-body">
+                <div class="text-muted">Manual Adjustments</div>
+                <h2>@Model.ManualAdjustmentsCount</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-warning">
+            <div class="card-body">
+                <div class="text-muted">Work Order Stock Usage</div>
+                <h2>@Model.WorkOrderStockMovementsCount</h2>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 
 <div class="row g-3 mb-4">
@@ -228,6 +254,54 @@ else
                     <span class="@priorityClass">@item.Priority</span>
                 </td>
                 <td>@item.DueDate?.ToString("dd.MM.yyyy")</td>
+            </tr>
+}
+        </tbody>
+    </table>
+}
+
+<h3 class="mt-4 mb-3">Recent Stock Movements</h3>
+
+@if (!Model.RecentInventoryTransactions.Any())
+{
+    <div class="alert alert-info">
+        No stock movements yet.
+    </div>
+}
+else
+{
+    <table class="table table-sm table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Item</th>
+                <th>Work Order</th>
+                <th>Type</th>
+                <th>Change</th>
+                <th>Quantity After</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+@foreach (var item in Model.RecentInventoryTransactions)
+{
+            var changeClass = item.QuantityChange < 0 ? "badge bg-danger" : "badge bg-success";
+            var changeText = item.QuantityChange > 0 ? $"+{item.QuantityChange}" : item.QuantityChange.ToString();
+
+            <tr>
+                <td>@item.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                <td>@(item.InventoryItem?.Name ?? $"Item #{item.InventoryItemId}")</td>
+                <td>@(item.WorkOrder?.Title ?? "-")</td>
+                <td>
+                    <span class="badge bg-secondary">@item.Type</span>
+                </td>
+                <td>
+                    <span class="@changeClass">@changeText</span>
+                </td>
+                <td>
+                    <strong>@item.QuantityAfter</strong>
+                </td>
+                <td>@item.Notes</td>
             </tr>
 }
         </tbody>

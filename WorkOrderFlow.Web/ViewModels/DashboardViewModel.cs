@@ -32,6 +32,12 @@ public class DashboardViewModel
 
     public int WorkOrdersWithMaterials { get; set; }
 
+    public int TotalStockMovements { get; set; }
+
+    public int ManualAdjustmentsCount { get; set; }
+
+    public int WorkOrderStockMovementsCount { get; set; }
+
     public int WorkOrderNewCount { get; set; }
 
     public int WorkOrderApprovedCount { get; set; }
@@ -61,4 +67,6 @@ public class DashboardViewModel
     public List<WorkOrder> RecentWorkOrders { get; set; } = new();
 
     public List<InventoryItem> LowStockItems { get; set; } = new();
+
+    public List<InventoryTransaction> RecentInventoryTransactions { get; set; } = new();
 }

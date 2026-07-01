@@ -86,6 +86,17 @@ public class DashboardController : Controller
                 .Distinct()
                 .Count(),
 
+            TotalStockMovements = await _context.InventoryTransactions.CountAsync(),
+
+            ManualAdjustmentsCount = await _context.InventoryTransactions
+                .CountAsync(t => t.Type == InventoryTransactionType.ManualAdjustment),
+
+            WorkOrderStockMovementsCount = await _context.InventoryTransactions
+                .CountAsync(t =>
+                    t.Type == InventoryTransactionType.WorkOrderUsage ||
+                    t.Type == InventoryTransactionType.WorkOrderUsageReversal ||
+                    t.Type == InventoryTransactionType.WorkOrderUsageCorrection),
+
             WorkOrderNewCount = await _context.WorkOrders.CountAsync(w => w.Status == WorkOrderStatus.New),
             WorkOrderApprovedCount = await _context.WorkOrders.CountAsync(w => w.Status == WorkOrderStatus.Approved),
             WorkOrderInProgressCount = await _context.WorkOrders.CountAsync(w => w.Status == WorkOrderStatus.InProgress),
@@ -109,7 +120,14 @@ public class DashboardController : Controller
                 .Take(5)
                 .ToListAsync(),
 
-            LowStockItems = lowStockItems
+            LowStockItems = lowStockItems,
+
+            RecentInventoryTransactions = await _context.InventoryTransactions
+                .Include(t => t.InventoryItem)
+                .Include(t => t.WorkOrder)
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(5)
+                .ToListAsync()
         };
 
         return View(model);
