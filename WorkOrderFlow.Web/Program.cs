@@ -30,6 +30,8 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
+
+    await DemoDataSeeder.SeedAsync(dbContext);
 }
 app.UseHttpsRedirection();
 app.UseRouting();
