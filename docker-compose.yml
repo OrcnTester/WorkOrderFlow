@@ -1,0 +1,18 @@
+services:
+  workorderflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: workorderflow:latest
+    container_name: workorderflow
+    ports:
+      - "5298:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Data Source=/data/workorderflow.db
+    volumes:
+      - workorderflow-data:/data
+
+volumes:
+  workorderflow-data:

@@ -387,11 +387,12 @@ docker build -t workorderflow .
 docker run --rm -p 5298:8080 workorderflow
 ```
 
-### Open the application:
+### Open the application
 
 ```text
 http://localhost:5298
 ```
+
 For local Docker usage, the application applies EF Core migrations on startup and creates the SQLite database automatically inside the container.
 
 ### Health check
@@ -400,10 +401,42 @@ After running the container, the health endpoint can be checked at:
 
 ```text
 http://localhost:5298/health
+```
 
 Expected response:
 
+```text
 Healthy
+```
+
+### Run with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Open the application:
+
+```text
+http://localhost:5298
+```
+
+The Compose setup uses a persistent Docker volume for the SQLite database:
+
+```text
+workorderflow-data
+```
+
+To stop the container:
+
+```bash
+docker compose down
+```
+
+To remove the container and reset the database volume:
+
+```bash
+docker compose down -v
 ```
 
 ---
