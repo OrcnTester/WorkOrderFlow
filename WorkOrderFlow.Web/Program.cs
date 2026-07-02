@@ -16,6 +16,7 @@ builder.Services.AddScoped<QuotePdfService>();
 builder.Services.AddScoped<WorkOrderPdfService>();
 builder.Services.AddScoped<WorkOrderWorkflowService>();
 builder.Services.AddScoped<InventoryStockService>();
+builder.Services.AddScoped<QuoteToWorkOrderService>();
 
 var app = builder.Build();
 

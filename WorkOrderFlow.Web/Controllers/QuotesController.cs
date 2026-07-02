@@ -15,11 +15,15 @@ namespace WorkOrderFlow.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly QuotePdfService _quotePdfService;
-
-        public QuotesController(ApplicationDbContext context, QuotePdfService quotePdfService)
+        private readonly QuoteToWorkOrderService _quoteToWorkOrderService;
+        public QuotesController(
+                                ApplicationDbContext context,
+                                QuotePdfService quotePdfService,
+                                QuoteToWorkOrderService quoteToWorkOrderService)
         {
             _context = context;
             _quotePdfService = quotePdfService;
+            _quoteToWorkOrderService = quoteToWorkOrderService;
         }
 
         // GET: Quotes
@@ -198,50 +202,17 @@ namespace WorkOrderFlow.Web.Controllers
             return File(pdfBytes, "application/pdf");
         }
 
-     public async Task<IActionResult> CreateWorkOrderFromQuote(int id)
+public async Task<IActionResult> CreateWorkOrderFromQuote(int id)
+{
+    var workOrderId = await _quoteToWorkOrderService.CreateOrGetWorkOrderFromQuoteAsync(id);
+
+    if (workOrderId == null)
     {
-        var quote = await _context.Quotes
-            .Include(q => q.Customer)
-            .FirstOrDefaultAsync(q => q.Id == id);
-
-        if (quote == null)
-        {
-            return NotFound();
-        }
-
-        var existingWorkOrder = await _context.WorkOrders
-            .FirstOrDefaultAsync(w => w.QuoteId == quote.Id);
-
-        if (existingWorkOrder != null)
-        {
-            if (quote.Status != QuoteStatus.Accepted)
-            {
-                quote.Status = QuoteStatus.Accepted;
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction("Details", "WorkOrders", new { id = existingWorkOrder.Id });
-        }
-
-        quote.Status = QuoteStatus.Accepted;
-
-        var workOrder = new WorkOrder
-        {
-            CustomerId = quote.CustomerId,
-            QuoteId = quote.Id,
-            Title = quote.Title,
-            Description = quote.Notes,
-            Status = WorkOrderStatus.New,
-            Priority = WorkOrderPriority.Medium,
-            CreatedAt = DateTime.UtcNow,
-            DueDate = DateTime.UtcNow.AddDays(7)
-        };
-
-        _context.WorkOrders.Add(workOrder);
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction("Details", "WorkOrders", new { id = workOrder.Id });
+        return NotFound();
     }
+
+    return RedirectToAction("Details", "WorkOrders", new { id = workOrderId.Value });
+}
         private bool QuoteExists(int id)
         {
             return _context.Quotes.Any(e => e.Id == id);
