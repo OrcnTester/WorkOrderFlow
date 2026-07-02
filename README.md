@@ -1,5 +1,5 @@
 # WorkOrderFlow
-
+![.NET CI](https://github.com/OrcnTester/WorkOrderFlow/actions/workflows/ci.yml/badge.svg)
 WorkOrderFlow is an ASP.NET Core MVC operations management application designed for small businesses and service teams that need to manage customers, quotes, work orders, inventory, stock movements, material usage, workflow status history, dashboard metrics, and PDF exports from a single operational workflow.
 
 The project focuses on a realistic business process:
