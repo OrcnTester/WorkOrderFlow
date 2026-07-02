@@ -1,0 +1,14 @@
+.git
+.github
+.vscode
+bin
+obj
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/*.db
+**/*.db-shm
+**/*.db-wal
+screenshots
+README.md

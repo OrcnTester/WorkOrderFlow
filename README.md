@@ -371,6 +371,32 @@ Current test status:
 
 ---
 
+## Docker
+
+The application can also be built and run with Docker.
+
+### Build the Docker image
+
+```bash
+docker build -t workorderflow .
+```
+
+### Run the container
+
+```bash
+docker run --rm -p 5298:8080 workorderflow
+```
+
+### Open the application:
+
+```text
+http://localhost:5298
+```
+For local Docker usage, the application applies EF Core migrations on startup and creates the SQLite database automatically inside the container.
+
+
+---
+
 ## Getting Started
 
 ### Requirements
